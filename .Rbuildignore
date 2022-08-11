@@ -1,0 +1,6 @@
+^rTermCount\.Rproj$
+^\.Rproj\.user$
+^data-raw$
+_scripts
+_debug
+^LICENSE\.md$
