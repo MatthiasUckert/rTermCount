@@ -272,7 +272,7 @@ position_count <- function(.tls, .doc, ...) {
   check_cols(.doc, "doc_id")
   check_cols(.doc, "token")
   check_cols(.tls, "term")
-  check_dups(.tab, "term")
+  check_dups(.tls, "term")
   for (i in quos_vec_) check_cols(.doc, i)
 
 
