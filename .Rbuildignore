@@ -3,4 +3,5 @@
 ^data-raw$
 _scripts
 _debug
+_data
 ^LICENSE\.md$

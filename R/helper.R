@@ -27,32 +27,32 @@ check_dups <- function(.tab, .col, .when = c("before", "after", "none")) {
   }
 }
 
-keep_groups <- function(.tab, .group = c("tok", "oid")) {
-  tok_id <- keep <- oid <- NULL
-
-  if (.group == "tok") {
-    .tab %>%
-      dplyr::mutate(
-        keep = c(1L, diff(tok_id)),
-        keep = dplyr::if_else(dplyr::lead(keep == 1L), 1L, keep),
-        keep = dplyr::if_else(keep == 1L, 1L, NA_integer_),
-        gtok = cumsum(is.na(keep))
-      ) %>%
-      dplyr::filter(!is.na(keep)) %>%
-      dplyr::select(-keep)
-  } else {
-    .tab %>%
-      dplyr::mutate(
-        keep = c(1L, diff(oid)),
-        keep = dplyr::if_else(dplyr::lead(keep == 1L), 1L, keep),
-        keep = dplyr::if_else(keep == 1L, 1L, NA_integer_),
-        goid = cumsum(is.na(keep))
-      ) %>%
-      dplyr::filter(!is.na(keep)) %>%
-      dplyr::select(-keep)
-  }
-
-}
+# keep_groups <- function(.tab, .group = c("tok", "oid")) {
+#   tok_id <- keep <- oid <- NULL
+#
+#   if (.group == "tok") {
+#     .tab %>%
+#       dplyr::mutate(
+#         keep = c(1L, diff(tok_id)),
+#         keep = dplyr::if_else(dplyr::lead(keep == 1L), 1L, as.integer(keep)),
+#         keep = dplyr::if_else(keep == 1L, 1L, NA_integer_),
+#         gtok = cumsum(is.na(keep))
+#       ) %>%
+#       dplyr::filter(!is.na(keep)) %>%
+#       dplyr::select(-keep)
+#   } else {
+#     .tab %>%
+#       dplyr::mutate(
+#         keep = c(1L, diff(oid)),
+#         keep = dplyr::if_else(dplyr::lead(keep == 1L), 1L, as.integer(keep)),
+#         keep = dplyr::if_else(keep == 1L, 1L, NA_integer_),
+#         goid = cumsum(is.na(keep))
+#       ) %>%
+#       dplyr::filter(!is.na(keep)) %>%
+#       dplyr::select(-keep)
+#   }
+#
+# }
 
 
 
@@ -116,4 +116,33 @@ tl_dep <- function(.tls) {
     dplyr::left_join(cnt_parents_, by = "hash") %>%
     dplyr::select(hash, ngram, term, oid, token, parents, children, dplyr::everything())
 
+}
+
+# .tab <- doc_
+# .ngram <- 2
+get_ngram <- function(.tab, .tls, .ngram) {
+  ngram <- hash <- term <- n <- sep <- sep1 <- tok_id <- doc_id <- start <- NULL
+
+  tls_ <- dplyr::filter(.tls, ngram == .ngram)
+  tls_ <- dplyr::select(tls_, hash, term, ngram)
+
+
+  if (.ngram == 1) {
+    expr_ <- rlang::parse_expr("paste(token)")
+  } else {
+    expr_ <- purrr::map_chr(seq_len(.ngram - 1), ~ glue::glue("dplyr::lead(token, {.x})"))
+    expr_ <- paste(expr_, collapse = ", ")
+    expr_ <- rlang::parse_expr(as.character(glue::glue("paste(token, {expr_})")))
+  }
+
+  tab_ <- .tab %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::filter(n >= .ngram) %>%
+    dplyr::mutate(sep1 = dplyr::lead(sep, n = .ngram - 1)) %>%
+    dplyr::mutate(term = !!expr_) %>%
+    dplyr::inner_join(tls_, by = "term") %>%
+    dplyr::filter(sep == sep1) %>%
+    dplyr::mutate(start = tok_id, stop = tok_id + .ngram - 1) %>%
+    dplyr::select(doc_id, hash, ngram, term, start, stop) %>%
+    tibble::as_tibble()
 }

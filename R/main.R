@@ -84,7 +84,7 @@ prep_termlist <- function(.tab, .fun_std = NULL, .get_dep = FALSE) {
   term <- token <- hash <- ngram <- term_orig <- oid <- NULL
 
   # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  source("_debug/debug-prep_termlist.R")
+  # source("_debug/debug-prep_termlist.R")
 
   # Checks -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
   check_cols(.tab, "term")
@@ -249,7 +249,7 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
 #' dup: Logical indicator if term is contained in higher N-Gram and has already been found
 #' @export
 #'
-# #' @import data.table
+#' @import data.table
 position_count <- function(.tls, .doc, ...) {
 
   # Assign NULL to Global VAriables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
@@ -262,7 +262,7 @@ position_count <- function(.tls, .doc, ...) {
 
 
   # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  source("_debug/debug-position_count.R")
+  # source("_debug/debug-position_count.R")
 
   # Get Quosures -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
   quos_     <- dplyr::quos(...)
@@ -275,60 +275,24 @@ position_count <- function(.tls, .doc, ...) {
   check_dups(.tls, "term")
   for (i in quos_vec_) check_cols(.doc, i)
 
-
-  # Get 1-Grams -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  tls1_ <- dplyr::filter(.tls, ngram == 1)[, c("hash", "term", "ngram")]
-  cnt1_ <- .doc %>%
-    dplyr::rename(term = token) %>%
-    dtplyr::lazy_dt() %>%
-    dplyr::inner_join(tls1_, by = "term") %>%
-    dplyr::select(doc_id, hash, ngram, term, start = tok_id, stop = tok_id) %>%
-    tibble::as_tibble()
+  # Prepare Document -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
+  doc_ <- .doc %>%
+    dplyr::group_by(!!!quos_) %>%
+    dplyr::mutate(n = dplyr::n()) %>%
+    dplyr::mutate(sep = paste(!!!quos_, sep = "-")) %>%
+    dplyr::ungroup()
 
 
-  # Get >1-Grams -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
-  tls2_ <- dplyr::filter(.tls, ngram > 1)
-  tls2_ <- tls2_ %>%
-    dplyr::select(hash, ngram, token, oid, term) %>%
-    tidyr::unnest(c(token, oid))
-
-
-  # Filter Dataframe for only tokens in vec AND for only consecutive tok_ids
-  cnt2_ <- .doc %>%
-    # dtplyr::lazy_dt() %>%
-    dplyr::filter(token %in% tls2_$token) %>%
-    keep_groups(.group = "tok")  %>%
-    dplyr::left_join(tls2_, by = "token") %>%
-    keep_groups(.group = "oid")  %>%
-    dplyr::group_by(gtok, goid) %>%
-    dplyr::filter(dplyr::n() == ngram) %>%
+  # Calculate Ngram -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
+  ngrams_ <- sort(unique(.tls$ngram))
+  purrr::map_dfr(ngrams_, ~ get_ngram(doc_, .tls, .x)) %>%
+    dplyr::arrange(start, -ngram) %>%
     dplyr::mutate(
-      sep = paste(!!!quos_, sep = "-"),
-      dup = any(duplicated(tok_id))
-      ) %>%
-    dplyr::summarise(
-      doc_id = doc_id[1], hash = hash[1], ngram = ngram[1], term = term[1],
-      check = paste(token, collapse = " "),
-      start = min(tok_id), stop  = max(tok_id),
-      sep1 = dplyr::first(sep), sep2 = dplyr::last(sep),
-      dup = any(dup),
-      ids = list(tok_id),
-      .groups = "drop"
+      ids = purrr::map2(start, stop, ~ .x:.y),
+      dup = utils::relist(flesh = duplicated(unlist(ids)), skeleton = ids),
+      dup = purrr::map_lgl(dup, all)
     ) %>%
-    dplyr::filter(sep1 == sep2, term == check) %>%
-    dplyr::select(-sep1, -sep2, -gtok, -goid, -check) %>%
-    tibble::as_tibble()
-
-  cnt3_ <- cnt1_ %>%
-    dplyr::mutate(dup = start %in% unlist(cnt2_$ids)) %>%
-    dplyr::bind_rows(cnt2_) %>%
-    dtplyr::lazy_dt() %>%
-    dplyr::arrange(start) %>%
-    dplyr::select(-ids) %>%
-    tibble::as_tibble()
-
-  return(cnt3_)
-
+    dplyr::select(-ids)
 }
 
 
