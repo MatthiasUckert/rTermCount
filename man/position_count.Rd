@@ -16,9 +16,10 @@ position_count(.tls, .doc, ...)
 \value{
 A Dataframe 5 columns:
 doc_id: Document ID of the dataframe in argument .document prepared by prep_document()\cr
-hash: Hash value of the terms in argument .termlist prepared by prep_termlist()\cr
+tid: Hash value of the terms in argument .termlist prepared by prep_termlist()\cr
 start: Starting value (tok_id in .document) of the term\cr
-stop: Ending value (tok_id in .document) of the term\cr\cr
+stop: Ending value (tok_id in .document) of the term\cr
+term: Term\cr
 dup: Logical indicator if term is contained in higher N-Gram and has already been found
 }
 \description{

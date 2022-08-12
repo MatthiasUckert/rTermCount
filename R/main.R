@@ -61,34 +61,26 @@ get_dups <- function(.tab) {
 #' Prepare Termlist
 #' @param .tab
 #' A Dataframe with at least 1 column (term: Term)
-#' @param .get_dep
-#' Get Term List Dependencies (default = FALSE).\cr
-#' Term List Dependencies show how n-grams in the term list are related.
+#' @param .get_dep NOt yeat implemented
 #' @param .fun_std Standardization Function
 #'
-#' @return
-#' A Dataframe with minimum 6 columns:\cr
-#' hash: Hashed value (xxhash32) of standardized term\cr
-#' ngram: N-Gram of standardized term\cr
-#' term_orig: Original term (as defined in parameter .tab)\cr
-#' term: Standardized term (with .fun_std)\cr
-#' oid: Order ID of token in column token\cr
-#' token: Tokienized version of column term\cr
-#' dep (optional): Dependencies of terms within the term list\cr
-#' ...: Any other column specified by ...
+#' @return A Dataframe
 #'
 #' @export
 prep_termlist <- function(.tab, .fun_std = NULL, .get_dep = FALSE) {
 
-  # Assign NULL to Global VAriables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
-  term <- token <- hash <- ngram <- term_orig <- oid <- NULL
-
   # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
   # source("_debug/debug-prep_termlist.R")
 
+  # Assign NULL to Global VAriables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
+  term <- token <- tid <- ngram <- term_orig <- oid <- NULL
+
   # Checks -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
-  check_cols(.tab, "term")
+  check_cols(.tab, "term", .type = ".doc")
+  check_cols(.tab, "tid", .type = ".doc")
   check_dups(.tab, "term", .when = "before")
+  check_dups(.tab, "tid", .when = "before")
+
 
   # Standardize Terms -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
   if (!is.null(.fun_std)) {
@@ -100,17 +92,11 @@ prep_termlist <- function(.tab, .fun_std = NULL, .get_dep = FALSE) {
   # Checks -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
   check_dups(.tab, "term", .when = "after")
 
-
   tab_ <- tab_ %>%
-    dplyr::mutate(
-      token = stringi::stri_split_fixed(term, " "),
-      hash  = purrr::map_chr(term, ~ digest::digest(.x, algo = "xxhash32")),
-      oid   = purrr::map(token, ~ seq_len(length(.x))),
-      ngram = lengths(token),
-    ) %>%
-    dplyr::select(hash, ngram, term, term_orig, oid, token, dplyr::everything())
+    dplyr::mutate(ngram = stringi::stri_count_fixed(term, " ") + 1L) %>%
+    dplyr::select(tid, ngram, term, term_orig, dplyr::everything())
 
-  if (.get_dep) tab_ <- tl_dep(tab_)
+  # if (.get_dep) tab_ <- tl_dep(tab_)
 
   return(tab_)
 }
@@ -146,14 +132,14 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
   # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
   # source("_debug/debug-prep_document.R")
 
-  until_ <- match.arg(.until, c("tok", "sen", "par", "pag"))
-
   # Assign NULL to Global VAriables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
   doc_id <- text <- token <- pag_id <- par_id <- sen_id <- tok_id <- NULL
 
+  until_ <- match.arg(.until, c("tok", "sen", "par", "pag"))
+
   # Checks -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
-  check_cols(.tab, "doc_id")
-  check_cols(.tab, "text")
+  check_cols(.tab, "doc_id", .type = ".doc")
+  check_cols(.tab, "text", .type = ".doc")
   check_dups(.tab, "term", .when = "none")
 
 
@@ -243,37 +229,39 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
 #' @return
 #' A Dataframe 5 columns:
 #' doc_id: Document ID of the dataframe in argument .document prepared by prep_document()\cr
-#' hash: Hash value of the terms in argument .termlist prepared by prep_termlist()\cr
+#' tid: Hash value of the terms in argument .termlist prepared by prep_termlist()\cr
 #' start: Starting value (tok_id in .document) of the term\cr
-#' stop: Ending value (tok_id in .document) of the term\cr\cr
+#' stop: Ending value (tok_id in .document) of the term\cr
+#' term: Term\cr
 #' dup: Logical indicator if term is contained in higher N-Gram and has already been found
 #' @export
 #'
 #' @import data.table
 position_count <- function(.tls, .doc, ...) {
 
+  # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+  # source("_debug/debug-position_count.R")
+
   # Assign NULL to Global VAriables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
   ngram <- token <- doc_id <- hash <- term <- tok_id <- oid <- gtok <- goid <- sep <-
     dup <- sep1 <- sep2 <- check <- start <- ids <- keep <- NULL
-
-  check_cols(.doc, "doc_id")
-  check_cols(.doc, "token")
-  check_cols(.tls, "term")
-
-
-  # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  # source("_debug/debug-position_count.R")
 
   # Get Quosures -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
   quos_     <- dplyr::quos(...)
   quos_vec_ <- sort(gsub("~", "", as.character(unlist(quos_))))
 
-  # Checks -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
-  check_cols(.doc, "doc_id")
-  check_cols(.doc, "token")
-  check_cols(.tls, "term")
+  # Checks (Document) -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+  check_cols(.doc, "doc_id", .type = ".doc")
+  check_cols(.doc, "token", .type = ".doc")
+  for (i in quos_vec_) check_cols(.doc, i, .type = ".doc")
+
+
+  # Checks (Termlist) -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+  check_cols(.tls, "tid", .type = ".doc")
+  check_cols(.tls, "term", .type = ".doc")
   check_dups(.tls, "term")
-  for (i in quos_vec_) check_cols(.doc, i)
+
+
 
   # Prepare Document -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
   doc_ <- .doc %>%

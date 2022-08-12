@@ -1,8 +1,8 @@
-check_cols <- function(.tab, .col) {
+check_cols <- function(.tab, .col, .type = c(".doc", ".tls")) {
   check_ <- .col %in% colnames(.tab)
 
   if (!check_) {
-    msg_ <- glue::glue(".tab must contain column '{.col}'")
+    msg_ <- glue::glue("{.type} must contain column '{.col}'")
     stop(msg_, call. = FALSE)
   }
 }
@@ -27,104 +27,12 @@ check_dups <- function(.tab, .col, .when = c("before", "after", "none")) {
   }
 }
 
-# keep_groups <- function(.tab, .group = c("tok", "oid")) {
-#   tok_id <- keep <- oid <- NULL
-#
-#   if (.group == "tok") {
-#     .tab %>%
-#       dplyr::mutate(
-#         keep = c(1L, diff(tok_id)),
-#         keep = dplyr::if_else(dplyr::lead(keep == 1L), 1L, as.integer(keep)),
-#         keep = dplyr::if_else(keep == 1L, 1L, NA_integer_),
-#         gtok = cumsum(is.na(keep))
-#       ) %>%
-#       dplyr::filter(!is.na(keep)) %>%
-#       dplyr::select(-keep)
-#   } else {
-#     .tab %>%
-#       dplyr::mutate(
-#         keep = c(1L, diff(oid)),
-#         keep = dplyr::if_else(dplyr::lead(keep == 1L), 1L, as.integer(keep)),
-#         keep = dplyr::if_else(keep == 1L, 1L, NA_integer_),
-#         goid = cumsum(is.na(keep))
-#       ) %>%
-#       dplyr::filter(!is.na(keep)) %>%
-#       dplyr::select(-keep)
-#   }
-#
-# }
-
-
-
-#' Helper Function: Get Term Dependencies
-#'
-#' @param .tls
-#' A Datframe produced by h_prep_termlist()
-#'
-#' @return
-#' A Dataframe
-tl_dep <- function(.tls) {
-
-  # Define Variables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
-  hash <- token <- oid <- sep <- start <- pos <- tok_id <- hash_ <-
-    child_pos <- child_hash <- dep <- ngram <- term_orig <- term <-
-    children <- parents <- parent_hash <- parent_pos <- NULL
-
-  doc_ <- .tls %>%
-    dplyr::select(sep = hash, token, oid) %>%
-    tidyr::unnest(c(oid, token)) %>%
-    # Columns to use the position_count() function
-    dplyr::mutate(tok_id = dplyr::row_number(), doc_id = 1)
-
-  cnt_ <- position_count(.tls, doc_, sep) %>%
-    dplyr::mutate(pos = purrr::map2(start, stop, ~ .x:.y)) %>%
-    dplyr::select(hash, pos) %>%
-    tidyr::unnest(pos) %>%
-    dplyr::left_join(dplyr::select(doc_, hash_ = sep, pos = tok_id, oid), by = "pos") %>%
-    dplyr::filter(!hash == hash_)
-
-
-  cnt_children_ <- cnt_ %>%
-    dplyr::group_by(hash_, hash) %>%
-    dplyr::summarise(child_pos = list(oid), .groups = "drop") %>%
-    dplyr::group_by(hash_) %>%
-    dplyr::summarise(
-      child_hash = list(hash),
-      child_pos = list(child_pos),
-      .groups = "drop"
-    ) %>%
-    dplyr::mutate(
-      children = purrr::map2(child_hash, child_pos, ~ purrr::set_names(c(.y), .x))
-    ) %>% dplyr::select(hash = hash_, children)
-
-  cnt_parents_ <- cnt_ %>%
-    dplyr::group_by(hash, hash_) %>%
-    dplyr::summarise(parent_pos = list(oid), .groups = "drop") %>%
-    dplyr::group_by(hash) %>%
-    dplyr::summarise(
-      parent_hash = list(hash_),
-      parent_pos = list(parent_pos),
-      .groups = "drop"
-    ) %>%
-    dplyr::mutate(
-      parents = purrr::map2(parent_hash, parent_pos, ~ purrr::set_names(c(.y), .x))
-    ) %>% dplyr::select(hash, parents)
-
-
-  .tls %>%
-    dplyr::left_join(cnt_children_, by = "hash") %>%
-    dplyr::left_join(cnt_parents_, by = "hash") %>%
-    dplyr::select(hash, ngram, term, oid, token, parents, children, dplyr::everything())
-
-}
-
-# .tab <- doc_
-# .ngram <- 2
 get_ngram <- function(.tab, .tls, .ngram) {
-  ngram <- hash <- term <- n <- sep <- sep1 <- tok_id <- doc_id <- start <- NULL
+
+  ngram <- tid <- term <- n <- sep <- sep1 <- tok_id <- doc_id <- start <- NULL
 
   tls_ <- dplyr::filter(.tls, ngram == .ngram)
-  tls_ <- dplyr::select(tls_, hash, term, ngram)
+  tls_ <- dplyr::select(tls_, tid, term, ngram)
 
 
   if (.ngram == 1) {
@@ -143,6 +51,67 @@ get_ngram <- function(.tab, .tls, .ngram) {
     dplyr::inner_join(tls_, by = "term") %>%
     dplyr::filter(sep == sep1) %>%
     dplyr::mutate(start = tok_id, stop = tok_id + .ngram - 1) %>%
-    dplyr::select(doc_id, hash, ngram, term, start, stop) %>%
+    dplyr::select(doc_id, tid, ngram, term, start, stop) %>%
     tibble::as_tibble()
 }
+
+
+
+
+# tl_dep <- function(.tls) {
+#
+#   # DEBUG -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#   source("_debug/debug-tl_dep.R")
+#
+#   doc_ <- .tls %>%
+#     dplyr::mutate(token = stringi::stri_split_fixed(term, " ")) %>%
+#     dplyr::mutate(doc_id = 1) %>%
+#     dplyr::select(doc_id, tid, token) %>%
+#     tidyr::unnest(token) %>%
+#     dplyr::mutate(tok_id = dplyr::row_number()) %>%
+#     dplyr::group_by(sep = tid) %>%
+#     dplyr::mutate(n = dplyr::n()) %>%
+#     dplyr::ungroup() %>%
+#     dplyr::select(-tid)
+#
+#   cnt_ <- position_count(.tls = .tls, .doc = doc_, sep) %>%
+#     dplyr::mutate(pos = purrr::map2(start, stop, ~ .x:.y)) %>%
+#     dplyr::select(tid, pos) %>%
+#     tidyr::unnest(pos) %>%
+#     dplyr::left_join(dplyr::select(doc_, hash_ = sep, pos = tok_id, oid), by = "pos") %>%
+#     dplyr::filter(!hash == hash_)
+#
+#
+#   cnt_children_ <- cnt_ %>%
+#     dplyr::group_by(hash_, hash) %>%
+#     dplyr::summarise(child_pos = list(oid), .groups = "drop") %>%
+#     dplyr::group_by(hash_) %>%
+#     dplyr::summarise(
+#       child_hash = list(hash),
+#       child_pos = list(child_pos),
+#       .groups = "drop"
+#     ) %>%
+#     dplyr::mutate(
+#       children = purrr::map2(child_hash, child_pos, ~ purrr::set_names(c(.y), .x))
+#     ) %>% dplyr::select(hash = hash_, children)
+#
+#   cnt_parents_ <- cnt_ %>%
+#     dplyr::group_by(hash, hash_) %>%
+#     dplyr::summarise(parent_pos = list(oid), .groups = "drop") %>%
+#     dplyr::group_by(hash) %>%
+#     dplyr::summarise(
+#       parent_hash = list(hash_),
+#       parent_pos = list(parent_pos),
+#       .groups = "drop"
+#     ) %>%
+#     dplyr::mutate(
+#       parents = purrr::map2(parent_hash, parent_pos, ~ purrr::set_names(c(.y), .x))
+#     ) %>% dplyr::select(hash, parents)
+#
+#
+#   .tls %>%
+#     dplyr::left_join(cnt_children_, by = "hash") %>%
+#     dplyr::left_join(cnt_parents_, by = "hash") %>%
+#     dplyr::select(hash, ngram, term, oid, token, parents, children, dplyr::everything())
+#
+# }

@@ -11,19 +11,10 @@ prep_termlist(.tab, .fun_std = NULL, .get_dep = FALSE)
 
 \item{.fun_std}{Standardization Function}
 
-\item{.get_dep}{Get Term List Dependencies (default = FALSE).\cr
-Term List Dependencies show how n-grams in the term list are related.}
+\item{.get_dep}{NOt yeat implemented}
 }
 \value{
-A Dataframe with minimum 6 columns:\cr
-hash: Hashed value (xxhash32) of standardized term\cr
-ngram: N-Gram of standardized term\cr
-term_orig: Original term (as defined in parameter .tab)\cr
-term: Standardized term (with .fun_std)\cr
-oid: Order ID of token in column token\cr
-token: Tokienized version of column term\cr
-dep (optional): Dependencies of terms within the term list\cr
-...: Any other column specified by ...
+A Dataframe
 }
 \description{
 Prepare Termlist
