@@ -168,7 +168,7 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
     tidytext::unnest_tokens(
       output = text,
       input = text,
-      token = stringi::stri_split_regex, pattern = "\n+",
+      token = stringi::stri_split_regex, pattern = "\n{2,}",
       to_lower = FALSE, drop = FALSE
     ) %>%
     dplyr::mutate(par_id = dplyr::row_number())
