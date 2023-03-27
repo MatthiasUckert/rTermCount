@@ -1,0 +1,223 @@
+---
+output: github_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# rTermCount
+
+rTermCount is an R package designed to help users count occurrences of
+specific terms in a given text corpus. It provides functions to prepare
+a list of terms to search for, tokenize the text corpus, and retrieve
+the positions of the terms in the tokenized text.
+
+## Installation
+
+You can install the development version of rTermCount from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("MatthiasUckert/rTermCount")
+```
+
+## Usage
+
+```{r example}
+library(rTermCount)
+## basic example code
+```
+
+Before counting the occurrences of specific terms in a text corpus, we
+need to prepare the term list and the corpus itself. Fortunately,
+rTermCount includes an example term list and an example text corpus that
+can be used for testing purposes.
+
+The example term list is a two-column data frame containing the terms to
+search for and their corresponding IDs. To access the example term list,
+simply call **`table_terms`** in R.
+
+```{r}
+# View the example term list
+head(table_terms)
+```
+
+The example text corpus is a data frame containing text data that can be
+used for testing. To access the example text corpus, simply call
+**`table_doc`** in R.
+
+```{r}
+# View the example text corpus
+head(table_doc)
+
+```
+
+Both the example term list and text corpus can be used as inputs to the
+**`prep_termlist()`** and **`prep_document()`** functions, respectively,
+to prepare them for searching. For both inputs it is important to
+standardize the text before we start the searching.
+
+The standardization function used in rTermCount is **`std_str()`**. This
+function takes a string as input and standardizes it by performing the
+following operations:
+
+-   Replaces all non-word characters with spaces
+
+-   Removes all punctuation characters
+
+-   Removes excess whitespace and replaces it with a single space
+
+-   Converts all characters to lowercase
+
+-   Translates all non-ASCII characters to their ASCII equivalents
+
+The **`std_str()`** function can also take an optional **`.op`**
+argument, which allows the user to choose which operations to perform.
+The available options are "space" (to remove excess whitespace), "punct"
+(to remove punctuation characters), "case" (to convert all characters to
+lowercase), and "ascii" (to translate non-ASCII characters to their
+ASCII equivalents).
+
+By standardizing the term list and corpus with the **`std_str()`**
+function, users can ensure that the terms and corpus are consistent and
+compatible, reducing the likelihood of missing or false positives in the
+search results.
+
+### **Preparing the Term List**
+
+The term list is a two-column data frame containing the terms to search
+for and their corresponding IDs.
+
+```{r}
+head(table_terms)
+```
+
+To prepare the term list for searching, we use the **`prep_termlist()`**
+function. This function takes two mandatory inputs:
+
+-   **`.tab`**: The term list data frame, which should contain two
+    columns: **`tid`** (the term ID) and **`term`** (the term to search
+    for).
+
+-   **`.fun_std`**: The standardization function to standardize the
+    terms before searching. In most cases, we can use the built-in
+    **`std_str()`** function.
+
+After running **`prep_termlist()`**, we obtain a new data frame with
+three columns: **`tid`** (the term ID), **`ngram`** (the length of the
+term), **`term`** (the standardized term), and **`term_orig`** (the
+original term). The standardized terms are used for searching, while the
+original terms are retained for reference.
+
+```{r}
+termlist <- prep_termlist(
+  .tab = table_terms,
+  .fun_std = std_str
+)
+
+head(termlist)
+```
+
+### Preparing the Document
+
+Before counting the occurrences of terms in a text corpus, we need to
+tokenize the document into a data frame where each row represents one
+token (usually a word). To prepare the document for searching, we can
+use the prep_document() function, which takes three mandatory inputs:
+
+.tab: The text data frame to tokenize. The data frame should contain a
+column with the text to tokenize and, optionally, an ID column for each
+document.
+
+.fun_std: The standardization function to standardize the tokens before
+searching. In most cases, we can use the built-in std_str() function.
+
+.until: A character indicating the level of tokenization. The available
+options are "tok" (token level), "sen" (sentence level), "par"
+(paragraph level), and "pag" (page level). By default, .until is set to
+"tok", meaning that the text is tokenized at the word level.
+
+After running prep_document(), we obtain a new data frame with one row
+per token, and additional columns for the document ID (if provided), the
+sentence ID (if .until is set to "sen"), and the paragraph ID (if .until
+is set to "par"). The standardized tokens are used for searching, while
+the original tokens are retained for reference.
+
+Here is an example of how to use prep_document() to tokenize a text
+corpus:
+
+```{r}
+document <- rTermCount::prep_document(
+  .tab = table_doc,
+  .fun_std = std_str,
+  .until = "tok"
+)
+```
+
+### Counting Terms
+
+Once we have prepared the term list and the text corpus, we can count
+the occurrences of the terms in the corpus using the
+**`position_count()`** function. This function takes three mandatory
+inputs:
+
+-   **`.tls`**: The term list prepared with **`prep_termlist()`**.
+
+-   **`.doc`**: The document prepared with **`prep_document()`**.
+
+-   **`...`**: Any additional arguments to be passed to the function.
+
+The **`...`** argument in the **`position_count()`** function is used to
+pass any additional arguments to the function. One important additional
+argument is the separator column (**`sep_col`**). The separator column
+is a column in the **`table_doc`** data frame that contains a unique
+identifier for each unit of text that should not be matched by the term
+list.
+
+In order to find the positions of the terms in the text,
+**`position_count()`** matches the terms in the term list to the
+standardized tokens in the document. It does this by using the
+**`dplyr`** package to perform a left join operation on the term list
+and the tokenized document data frames.
+
+Here is an example of how to use **`position_count()`** to count the
+occurrences of terms in a text corpus:
+
+```{r}
+output <- rTermCount::position_count(
+  .tls = termlist,
+  .doc = document,
+  sen_id
+)
+
+head(output)
+```
+
+The output of **`position_count()`** is a data frame with one row for
+each occurrence of each term in the document. The output contains the
+following columns:
+
+-   **`doc_id`**: The document ID.
+
+-   **`tid`**: The term ID.
+
+-   **`term`**: The original term.
+
+-   **`start`**: The starting position of the term in the document.
+
+-   **`stop`**: The ending position of the term in the document.
+
+-   **`dup`**: A logical flag indicating whether the term is part of a
+    higher n-gram.
