@@ -171,11 +171,22 @@ Here is an example of how to use prep_document() to tokenize a text
 corpus:
 
 ``` r
-document <- rTermCount::prep_document(
+document <- prep_document(
   .tab = table_doc,
   .fun_std = std_str,
   .until = "tok"
 )
+
+head(document)
+#> # A tibble: 6 x 6
+#>   doc_id                             pag_id par_id sen_id tok_id token     
+#>   <chr>                               <int>  <int>  <int>  <int> <chr>     
+#> 1 the_importance_of_being_on_twitter      1      1      1      1 the       
+#> 2 the_importance_of_being_on_twitter      1      1      1      2 importance
+#> 3 the_importance_of_being_on_twitter      1      1      1      3 of        
+#> 4 the_importance_of_being_on_twitter      1      1      1      4 being     
+#> 5 the_importance_of_being_on_twitter      1      1      1      5 on        
+#> 6 the_importance_of_being_on_twitter      1      1      1      6 twitter
 ```
 
 ### Counting Terms
@@ -208,13 +219,13 @@ Here is an example of how to use **`position_count()`** to count the
 occurrences of terms in a text corpus:
 
 ``` r
-output <- rTermCount::position_count(
+output_pos <- position_count(
   .tls = termlist,
   .doc = document,
   sen_id
 )
 
-head(output)
+head(output_pos)
 #> # A tibble: 6 x 7
 #>   doc_id                               tid ngram term    start  stop dup  
 #>   <chr>                              <int> <int> <chr>   <int> <dbl> <lgl>
@@ -234,6 +245,8 @@ following columns:
 
 - **`tid`**: The term ID.
 
+- **`ngram`**: The ngram of the term.
+
 - **`term`**: The original term.
 
 - **`start`**: The starting position of the term in the document.
@@ -242,3 +255,46 @@ following columns:
 
 - **`dup`**: A logical flag indicating whether the term is part of a
   higher n-gram.
+
+### Summarizing the Term Count
+
+Last, we use the function summarize_count() to retrieve the summary
+statistics of the position_count() function in the last step. This
+function takes the followng inputs:
+
+- **`.tab`**: The position count dataframe prepared by
+  **`position_count()`**.
+
+``` r
+output_sum <- summarize_count(output_pos)
+head(output_sum)
+#> # A tibble: 6 x 6
+#>   doc_id                             ngram   tid term    n_dup n_uni
+#>   <chr>                              <int> <int> <chr>   <int> <int>
+#> 1 the_importance_of_being_on_twitter     1     1 twitter    55    55
+#> 2 the_importance_of_being_on_twitter     1     3 london      8     4
+#> 3 the_importance_of_being_on_twitter     1     5 number      3     1
+#> 4 the_importance_of_being_on_twitter     1     7 office      1     0
+#> 5 the_importance_of_being_on_twitter     1     9 more        5     3
+#> 6 the_importance_of_being_on_twitter     1    11 time        6     6
+```
+
+The output of summarize_count**`()`** is a data frame that summarizes
+the count of the terms on a document level either **excluding** terms
+that are part of a higher N-gram (column: n_uni) or **including** terms
+that are part of a higher N-gram (column: n_dup). The output contains
+the following columns:
+
+- **`doc_id`**: The document ID.
+
+- **`tid`**: The term ID.
+
+- **`ngram`**: The ngram of the term.
+
+- **`term`**: The original term.
+
+- **`n_uni`**: Count of the term, excluding N-grams that are part of a
+  higher N-gram
+
+- **`n_dup`**: Count of the term, including N-grams that are part of a
+  higher N-gram

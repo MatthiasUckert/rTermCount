@@ -159,11 +159,13 @@ Here is an example of how to use prep_document() to tokenize a text
 corpus:
 
 ```{r}
-document <- rTermCount::prep_document(
+document <- prep_document(
   .tab = table_doc,
   .fun_std = std_str,
   .until = "tok"
 )
+
+head(document)
 ```
 
 ### Counting Terms
@@ -196,13 +198,13 @@ Here is an example of how to use **`position_count()`** to count the
 occurrences of terms in a text corpus:
 
 ```{r}
-output <- rTermCount::position_count(
+output_pos <- position_count(
   .tls = termlist,
   .doc = document,
   sen_id
 )
 
-head(output)
+head(output_pos)
 ```
 
 The output of **`position_count()`** is a data frame with one row for
@@ -213,6 +215,8 @@ following columns:
 
 -   **`tid`**: The term ID.
 
+-   **`ngram`**: The ngram of the term.
+
 -   **`term`**: The original term.
 
 -   **`start`**: The starting position of the term in the document.
@@ -221,3 +225,38 @@ following columns:
 
 -   **`dup`**: A logical flag indicating whether the term is part of a
     higher n-gram.
+
+### Summarizing the Term Count
+
+Last, we use the function summarize_count() to retrieve the summary
+statistics of the position_count() function in the last step. This
+function takes the followng inputs:
+
+-   **`.tab`**: The position count dataframe prepared by
+    **`position_count()`**.
+
+```{r}
+output_sum <- summarize_count(output_pos)
+head(output_sum)
+
+```
+
+The output of summarize_count**`()`** is a data frame that summarizes
+the count of the terms on a document level either **excluding** terms
+that are part of a higher N-gram (column: n_uni) or **including** terms
+that are part of a higher N-gram (column: n_dup). The output contains
+the following columns:
+
+-   **`doc_id`**: The document ID.
+
+-   **`tid`**: The term ID.
+
+-   **`ngram`**: The ngram of the term.
+
+-   **`term`**: The original term.
+
+-   **`n_uni`**: Count of the term, excluding N-grams that are part of a
+    higher N-gram
+
+-   **`n_dup`**: Count of the term, including N-grams that are part of a
+    higher N-gram
