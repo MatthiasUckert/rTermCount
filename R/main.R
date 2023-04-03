@@ -215,7 +215,8 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
     ) %>%
     dplyr::filter(!token == "") %>%
     dplyr::mutate(tok_id = dplyr::row_number()) %>%
-    dplyr::select(doc_id, pag_id, par_id, sen_id, tok_id, token)
+    dplyr::select(doc_id, pag_id, par_id, sen_id, tok_id, token) %>%
+    tibble::as_tibble()
 
   return(tab_)
 }
