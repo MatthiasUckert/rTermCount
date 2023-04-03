@@ -296,17 +296,91 @@ position_count <- function(.tls, .doc, ...) {
 #' n_uni: Count of the term, excluding N-grams that are part of a higher N-gram\cr()
 #' @export
 #'
-#' @examples
+#' @import data.table
 summarize_count <- function(.tab) {
   doc_id <- tid <- ngram <- term <- dup <- NULL
 
   .tab %>%
     dtplyr::lazy_dt() %>%
-    dplyr::group_by(doc_id, ngram, tid, term) %>%
+    dplyr::group_by(doc_id, tid, ngram, term) %>%
     dplyr::summarise(
       n_dup = dplyr::n(),
       n_uni = sum(!dup),
       .groups = "drop"
     ) %>%
     tibble::as_tibble()
+}
+
+get_context <- function(df1, df2, context_level, context_amount) {
+
+  # Check if the context_level argument is valid
+  if (!context_level %in% c("word", "sentence")) {
+    stop("Invalid context_level. Please use 'word' or 'sentence'.")
+  }
+
+  # Initialize the "pre" and "post" columns with empty strings
+  df1 <- df1 %>%
+    dplyr::mutate(pre = NA_character_, post = NA_character_)
+
+  # Loop through each row in the first dataframe
+  for (i in seq_len(nrow(df1))) {
+
+    # Extract relevant information from the current row
+    current_doc_id <- df1$doc_id[i]
+    start_tid <- df1$start[i]
+    stop_tid <- df1$stop[i]
+
+    # Get the context tokens based on the context_level argument
+    if (context_level == "word") {
+
+      # Get the pre-context tokens
+      pre_tokens <- df2 %>%
+        dplyr::filter(doc_id == current_doc_id, tok_id >= start_tid - context_amount, tok_id < start_tid) %>%
+        dplyr::pull(tok_id)
+
+      # Get the post-context tokens
+      post_tokens <- df2 %>%
+        dplyr::filter(doc_id == current_doc_id, tok_id > stop_tid, tok_id <= stop_tid + context_amount) %>%
+        dplyr::pull(tok_id)
+
+    } else {
+
+      # Get the pre-context sentence ID
+      pre_sentence_id <- df2 %>%
+        dplyr::filter(doc_id == current_doc_id, tok_id == start_tid) %>%
+        dplyr::pull(sen_id) - context_amount
+
+      # Get the post-context sentence ID
+      post_sentence_id <- df2 %>%
+        dplyr::filter(doc_id == current_doc_id, tok_id == stop_tid) %>%
+        dplyr::pull(sen_id) + context_amount
+
+      # Get the pre-context tokens
+      pre_tokens <- df2 %>%
+        dplyr::filter(doc_id == current_doc_id, sen_id >= pre_sentence_id, sen_id <= start_tid) %>%
+        dplyr::pull(tok_id)
+
+      # Get the post-context tokens
+      post_tokens <- df2 %>%
+        dplyr::filter(doc_id == current_doc_id, sen_id >= stop_tid, sen_id <= post_sentence_id) %>%
+        dplyr::pull(tok_id)
+    }
+
+    # Update the "pre" column with the context, or "No Context Available" if none
+    if (length(pre_tokens) > 0) {
+      df1$pre[i] <- paste(df2$token[pre_tokens], collapse = " ")
+    } else {
+      df1$pre[i] <- "No Context Available"
+    }
+
+    # Update the "post" column with the context, or "No Context Available" if none
+    if (length(post_tokens) > 0) {
+      df1$post[i] <- paste(df2$token[post_tokens], collapse = " ")
+    } else {
+      df1$post[i] <- "No Context Available"
+    }
+  }
+
+  # Return the modified dataframe with added context
+  return(df1)
 }
