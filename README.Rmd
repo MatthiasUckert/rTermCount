@@ -58,12 +58,6 @@ The example text corpus is a data frame containing text data that can be
 used for testing. To access the example text corpus, simply call
 **`table_doc`** in R.
 
-```{r}
-# View the example text corpus
-head(table_doc)
-
-```
-
 Both the example term list and text corpus can be used as inputs to the
 **`prep_termlist()`** and **`prep_document()`** functions, respectively,
 to prepare them for searching. For both inputs it is important to
