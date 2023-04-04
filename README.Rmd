@@ -260,3 +260,34 @@ the following columns:
 
 -   **`n_dup`**: Count of the term, including N-grams that are part of a
     higher N-gram
+
+# Why this Package?
+
+Counting terms in documents is perse an easy task. Nonetheless, using
+simple look-ups or Regular Expressions have their drawbacks. For example
+using regular expressions can take a very long time and we don't
+retrieve the exact location of a term. So the purpose of this package is
+to:
+
+1.  Provide a standardized input and output of term search
+
+2.  Have a optimized pipeline for term list with thousands of terms
+
+3.  Retrieve the exact location of a term within the document
+
+4.  Deduplicate for terms that are part of a higher ngram
+
+Having the exact location also enables us to retrieve the context of a
+term
+
+```{r}
+context <- get_context(
+  .pos = output_pos,
+  .doc = document, 
+  .context = "word",
+  .n = 4
+) %>%
+  dplyr::select(pre, term, post)
+
+head(context)
+```
