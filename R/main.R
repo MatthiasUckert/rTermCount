@@ -312,76 +312,140 @@ summarize_count <- function(.tab) {
     tibble::as_tibble()
 }
 
-get_context <- function(df1, df2, context_level, context_amount) {
+#' Get Context of Terms in a Document
+#'
+#' @param .pos A dataframe with terms and their positions in the input .doc dataframe.
+#' @param .doc A tokenized dataframe of an input text.
+#' @param .context A character vector specifying the context type, either "word" or "sentence".
+#' @param .n A positive integer specifying the number of words or sentences to include in the context.
+#' @param .sep A character string used as a separator between sentences when concatenating tokens.
+#'
+#' @return A dataframe with pre and post context information for each term.
+#' @export
+#'
+#' @examples
+#'
+# TODO: Add examples
+get_context <- function(.pos, .doc, .context = c("word", "sentence"), .n, .sep = "---") {
 
-  # Check if the context_level argument is valid
-  if (!context_level %in% c("word", "sentence")) {
-    stop("Invalid context_level. Please use 'word' or 'sentence'.")
+  doc_id <- tid <- ngram <- dup <- start <- pre <- term <- post <-  sen_id <- tmp <-
+    token <- tok_id <- NULL
+
+  # Check if the input .context is valid and set the context_ variable accordingly
+  context_ <- match.arg(.context, c("word", "sentence"))
+
+  # Check if the context_ is not in the allowed values and stop with an error message
+  if (!context_ %in% c("word", "sentence")) {
+    stop("Invalid .context: Please use 'word' or 'sentence'.")
   }
 
   # Initialize the "pre" and "post" columns with empty strings
-  df1 <- df1 %>%
-    dplyr::mutate(pre = NA_character_, post = NA_character_)
+  tab_ <- .pos %>%
+    dplyr::mutate(pre = NA_character_, post = NA_character_) %>%
+    dplyr::select(doc_id, tid, ngram, dup, start, stop, pre, term, post) %>%
+    dplyr::mutate(context = .context, n = .n)
 
-  # Loop through each row in the first dataframe
-  for (i in seq_len(nrow(df1))) {
-
-    # Extract relevant information from the current row
-    current_doc_id <- df1$doc_id[i]
-    start_tid <- df1$start[i]
-    stop_tid <- df1$stop[i]
-
-    # Get the context tokens based on the context_level argument
-    if (context_level == "word") {
-
-      # Get the pre-context tokens
-      pre_tokens <- df2 %>%
-        dplyr::filter(doc_id == current_doc_id, tok_id >= start_tid - context_amount, tok_id < start_tid) %>%
-        dplyr::pull(tok_id)
-
-      # Get the post-context tokens
-      post_tokens <- df2 %>%
-        dplyr::filter(doc_id == current_doc_id, tok_id > stop_tid, tok_id <= stop_tid + context_amount) %>%
-        dplyr::pull(tok_id)
-
-    } else {
-
-      # Get the pre-context sentence ID
-      pre_sentence_id <- df2 %>%
-        dplyr::filter(doc_id == current_doc_id, tok_id == start_tid) %>%
-        dplyr::pull(sen_id) - context_amount
-
-      # Get the post-context sentence ID
-      post_sentence_id <- df2 %>%
-        dplyr::filter(doc_id == current_doc_id, tok_id == stop_tid) %>%
-        dplyr::pull(sen_id) + context_amount
-
-      # Get the pre-context tokens
-      pre_tokens <- df2 %>%
-        dplyr::filter(doc_id == current_doc_id, sen_id >= pre_sentence_id, sen_id <= start_tid) %>%
-        dplyr::pull(tok_id)
-
-      # Get the post-context tokens
-      post_tokens <- df2 %>%
-        dplyr::filter(doc_id == current_doc_id, sen_id >= stop_tid, sen_id <= post_sentence_id) %>%
-        dplyr::pull(tok_id)
-    }
-
-    # Update the "pre" column with the context, or "No Context Available" if none
-    if (length(pre_tokens) > 0) {
-      df1$pre[i] <- paste(df2$token[pre_tokens], collapse = " ")
-    } else {
-      df1$pre[i] <- "No Context Available"
-    }
-
-    # Update the "post" column with the context, or "No Context Available" if none
-    if (length(post_tokens) > 0) {
-      df1$post[i] <- paste(df2$token[post_tokens], collapse = " ")
-    } else {
-      df1$post[i] <- "No Context Available"
-    }
+  # Return tab_ if context_ is "word" and .n is 0
+  if (context_ == "word" & .n == 0) {
+    return(tab_)
   }
 
-  # Return the modified dataframe with added context
-  return(df1)
+  # Modify .doc by adding tmp and token columns
+  doc_ <- .doc %>%
+    dplyr::mutate(
+      tmp = dplyr::if_else(!dplyr::lead(sen_id) == sen_id, paste0(" ", .sep), ""),
+      tmp = dplyr::if_else(is.na(tmp), "", tmp),
+      token = paste0(token, tmp),
+    )
+
+
+  # If context_ is "word", calculate pre and post ranges for the context
+  if (context_ == "word") {
+    # Calculate the position of the previous word relative to the current term
+    pre1 <- tab_$start - 1L
+
+    # Set the position to 1 if it does not correspond to a token ID in .doc
+    pre1[!pre1 %in% .doc$tok_id] <- 1L
+
+    # Calculate the position of the first word in the pre-context
+    pre0 <- pre1 - .n + 1
+
+    # Set the position to 1 if it does not correspond to a token ID in .doc
+    pre1[!pre0 %in% .doc$tok_id] <- 1L
+
+    # Calculate the position of the first word in the post-context
+    post0 <- tab_$stop + 1L
+
+    # Set the position to the maximum token ID if it does not correspond to a token ID in .doc
+    post0[!post0 %in% .doc$tok_id] <- max(.doc$tok_id)
+
+    # Calculate the position of the last word in the post-context
+    post1 <- post0 + .n - 1
+
+    # Set the position to the maximum token ID if it does not correspond to a token ID in .doc
+    post1[!post1 %in% .doc$tok_id] <- max(.doc$tok_id)
+
+
+    # If context_ is "sentence", calculate pre and post ranges for the context
+  } else if (context_ == "sentence") {
+    # Calculate minimum and maximum token IDs for each sentence
+    sen_min_ <- .doc %>%
+      dplyr::group_by(sen_id) %>%
+      dplyr::filter(tok_id == min(tok_id)) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(sen_id, tok_id)
+
+    sen_max_ <- .doc %>%
+      dplyr::group_by(sen_id) %>%
+      dplyr::filter(tok_id == max(tok_id)) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(sen_id, tok_id)
+
+    # Calculate the sentence ID for the first word in the pre-context
+    pre0 <- tibble::tibble(sen_id = .doc$sen_id[tab_$start] - .n) %>%
+      # Join with the sentence IDs of the earliest sentences in .doc
+      dplyr::left_join(sen_min_, by = dplyr::join_by(sen_id)) %>%
+      # Extract the token ID of the first word in the pre-context
+      dplyr::pull(tok_id)
+
+    # Set the token ID to 1 if it is missing
+    pre0[is.na(pre0)] <- 1L
+
+    # Calculate the position of the previous word relative to the current term
+    pre1 <- tab_$start - 1L
+
+    # Set the position to 1 if it does not correspond to a token ID in .doc
+    pre1[!pre1 %in% .doc$tok_id] <- 1L
+
+    # Calculate the token ID of the last word in the post-context
+    post1 <- tibble::tibble(sen_id = .doc$sen_id[tab_$stop] + .n) %>%
+      # Join with the sentence IDs of the latest sentences in .doc
+      dplyr::left_join(sen_max_, by = dplyr::join_by(sen_id)) %>%
+      # Extract the token ID of the last word in the post-context
+      dplyr::pull(tok_id)
+
+    # Set the token ID to the maximum value in .doc if it is missing
+    post1[is.na(post1)] <- max(.doc$tok_id)
+
+    # Calculate the position of the first word in the post-context
+    post0 <- tab_$stop + 1L
+
+    # Set the position to the maximum token ID if it does not correspond to a token ID in .doc
+    post0[!post0 %in% .doc$tok_id] <- max(.doc$tok_id)
+  }
+
+  # Create lists of pre and post context ranges
+  lst_pre <- purrr::map2(pre0, pre1, ~ .x:.y)
+  lst_post <- purrr::map2(post0, post1, ~ .x:.y)
+
+  # Update tab_ with pre and post context information
+  out_ <- tab_ %>%
+    dplyr::mutate(
+      pre = utils::relist(doc_$token[unlist(lst_pre)], lst_pre),
+      post = utils::relist(doc_$token[unlist(lst_post)], lst_post),
+      pre = purrr::map_chr(pre, ~ paste(.x, collapse = " ")),
+      post = purrr::map_chr(post, ~ paste(.x, collapse = " "))
+    )
+
+  return(out_)
 }
