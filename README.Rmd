@@ -1,5 +1,6 @@
 ---
 output: github_document
+always_allow_html: true
 editor_options: 
   markdown: 
     wrap: 72
@@ -49,11 +50,6 @@ The example term list is a two-column data frame containing the terms to
 search for and their corresponding IDs. To access the example term list,
 simply call **`table_terms`** in R.
 
-```{r}
-# View the example term list
-head(table_terms)
-```
-
 The example text corpus is a data frame containing text data that can be
 used for testing. To access the example text corpus, simply call
 **`table_doc`** in R.
@@ -89,13 +85,20 @@ function, users can ensure that the terms and corpus are consistent and
 compatible, reducing the likelihood of missing or false positives in the
 search results.
 
-### **Preparing the Term List**
+### Preparing the Term List
 
 The term list is a two-column data frame containing the terms to search
-for and their corresponding IDs.
+for and their corresponding IDs (An additional indicator column
+`part_of_ngram` is included that indicates whether a term is part of a
+higher n-gram.
 
-```{r}
-head(table_terms)
+```{r echo=FALSE}
+# View the example term list
+head(table_terms[, 1:3]) %>%
+  dplyr::mutate(part_of_ngram = dplyr::if_else(is.na(part_of_ngram), "", part_of_ngram)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_paper() %>%
+  kableExtra::kable_styling(font_size = 10, full_width = TRUE)
 ```
 
 To prepare the term list for searching, we use the **`prep_termlist()`**
@@ -121,7 +124,15 @@ termlist <- prep_termlist(
   .fun_std = std_str
 )
 
-head(termlist)
+```
+
+```{r echo=FALSE}
+head(termlist) %>%
+  dplyr::select(-origin) %>%
+  dplyr::mutate(part_of_ngram = dplyr::if_else(is.na(part_of_ngram), "", part_of_ngram)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_paper() %>%
+  kableExtra::kable_styling(font_size = 10, full_width = TRUE)
 ```
 
 ### Preparing the Document
@@ -158,8 +169,13 @@ document <- prep_document(
   .fun_std = std_str,
   .until = "tok"
 )
+```
 
-head(document)
+```{r echo=FALSE}
+head(document)  %>%
+  knitr::kable() %>%
+  kableExtra::kable_paper() %>%
+  kableExtra::kable_styling(font_size = 10, full_width = TRUE)
 ```
 
 ### Counting Terms
@@ -197,8 +213,13 @@ output_pos <- position_count(
   .doc = document,
   sen_id
 )
+```
 
-head(output_pos)
+```{r echo=FALSE}
+head(output_pos)  %>%
+  knitr::kable() %>%
+  kableExtra::kable_paper() %>%
+  kableExtra::kable_styling(font_size = 10, full_width = TRUE)
 ```
 
 The output of **`position_count()`** is a data frame with one row for
@@ -231,15 +252,23 @@ function takes the followng inputs:
 
 ```{r}
 output_sum <- summarize_count(output_pos)
-head(output_sum)
-
 ```
 
-The output of summarize_count**`()`** is a data frame that summarizes
-the count of the terms on a document level either **excluding** terms
-that are part of a higher N-gram (column: n_uni) or **including** terms
-that are part of a higher N-gram (column: n_dup). The output contains
-the following columns:
+```{r echo=FALSE}
+dplyr::arrange(output_sum, -n_dup) %>%
+  dplyr::left_join(table_terms[, c("tid", "part_of_ngram")], by = dplyr::join_by(tid))  %>%
+  dplyr::mutate(part_of_ngram = dplyr::if_else(is.na(part_of_ngram), "", part_of_ngram)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_paper() %>%
+  kableExtra::kable_styling(font_size = 10, full_width = TRUE)
+```
+
+The output of `summarize_count()` is a data frame that summarizes the
+count of the terms on a document level either **excluding** terms that
+are part of a higher N-gram (column: `n_uni`) or **including** terms
+that are part of a higher N-gram (column: `n_dup`). The output contains
+the following columns (the column `part_of_ngram` is added to the output
+in order to show case the deduplicated count):
 
 -   **`doc_id`**: The document ID.
 
@@ -255,11 +284,30 @@ the following columns:
 -   **`n_dup`**: Count of the term, including N-grams that are part of a
     higher N-gram
 
+Looking at the example above, we can see that the term **carbon (tid:
+174)** is part of several other terms within the termlist (see column:
+`part_of_ngram` which shows the term identifiers (tid) that are higher
+ngrams including this term). Specifically, carbon is part of the term
+**carbon footprint (tid: 5).** Both terms appear in the text corpus, so
+when we count both terms individually we get "raw" count (column:
+`n_dup`) of **64** for **carbon** and **19** for **carbon footprint.**
+Not adjusting for the fact that the term **carbon** is completely
+included in the term **carbon footprint**, would lead to a double
+counting of **carbon.** Therefore the column `n_uni` adjust the "raw"
+count to a "unique" count, by subtracting the occurrences of **carbon
+footprint** from the occurrences of **carbon.** This leads to a unique
+count of **carbon** of **45 (64 - 19).**
+
+(Note: In the example above only **carbon footprint** as a higher ngram
+was found in the corpus. In case more higher ngram were contained in the
+corpus, the function would have automatically adjust for all
+occurrences)
+
 # Why this Package?
 
-Counting terms in documents is perse an easy task. Nonetheless, using
-simple look-ups or Regular Expressions have their drawbacks. For example
-using regular expressions can take a very long time and we don't
+Counting terms in documents is generally not a hard task. Nonetheless,
+using simple look-ups or Regular Expressions have their drawbacks. For
+example using regular expressions can take a very long time and we don't
 retrieve the exact location of a term. So the purpose of this package is
 to:
 
@@ -282,6 +330,11 @@ context <- get_context(
   .n = 4
 ) %>%
   dplyr::select(pre, term, post)
+```
 
-head(context)
+```{r echo=FALSE}
+head(context)  %>%
+  knitr::kable() %>%
+  kableExtra::kable_paper() %>%
+  kableExtra::kable_styling(font_size = 10, full_width = TRUE)
 ```

@@ -35,18 +35,6 @@ The example term list is a two-column data frame containing the terms to
 search for and their corresponding IDs. To access the example term list,
 simply call **`table_terms`** in R.
 
-``` r
-# View the example term list
-head(table_terms)
-#>   tid                                  term source
-#> 1   1                        Animal welfare  GPT 4
-#> 2   2                          Biodiversity  GPT 4
-#> 3   3    Biodiversity conservation programs  GPT 4
-#> 4   4                      Carbon footprint  GPT 4
-#> 5   5 Carbon footprint reduction strategies  GPT 4
-#> 6   6         Carbon neutrality and offsets  GPT 4
-```
-
 The example text corpus is a data frame containing text data that can be
 used for testing. To access the example text corpus, simply call
 **`table_doc`** in R.
@@ -82,21 +70,92 @@ function, users can ensure that the terms and corpus are consistent and
 compatible, reducing the likelihood of missing or false positives in the
 search results.
 
-### **Preparing the Term List**
+### Preparing the Term List
 
 The term list is a two-column data frame containing the terms to search
-for and their corresponding IDs.
+for and their corresponding IDs (An additional indicator column
+`part_of_ngram` is included that indicates whether a term is part of a
+higher n-gram.
 
-``` r
-head(table_terms)
-#>   tid                                  term source
-#> 1   1                        Animal welfare  GPT 4
-#> 2   2                          Biodiversity  GPT 4
-#> 3   3    Biodiversity conservation programs  GPT 4
-#> 4   4                      Carbon footprint  GPT 4
-#> 5   5 Carbon footprint reduction strategies  GPT 4
-#> 6   6         Carbon neutrality and offsets  GPT 4
-```
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+tid
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:left;">
+part_of_ngram
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+Animal welfare
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+Biodiversity
+</td>
+<td style="text-align:left;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+Biodiversity conservation programs
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+Carbon footprint
+</td>
+<td style="text-align:left;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+Carbon footprint reduction strategies
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+Carbon neutrality and offsets
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+</tbody>
+</table>
 
 To prepare the term list for searching, we use the **`prep_termlist()`**
 function. This function takes two mandatory inputs:
@@ -120,18 +179,129 @@ termlist <- prep_termlist(
   .tab = table_terms,
   .fun_std = std_str
 )
-
-head(termlist)
-#> # A tibble: 6 x 5
-#>     tid ngram term                                  term_orig             source
-#>   <dbl> <int> <chr>                                 <chr>                 <chr> 
-#> 1     1     2 animal welfare                        Animal welfare        GPT 4 
-#> 2     2     1 biodiversity                          Biodiversity          GPT 4 
-#> 3     3     3 biodiversity conservation programs    Biodiversity conserv~ GPT 4 
-#> 4     4     2 carbon footprint                      Carbon footprint      GPT 4 
-#> 5     5     4 carbon footprint reduction strategies Carbon footprint red~ GPT 4 
-#> 6     6     4 carbon neutrality and offsets         Carbon neutrality an~ GPT 4
 ```
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+tid
+</th>
+<th style="text-align:right;">
+ngram
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:left;">
+term_orig
+</th>
+<th style="text-align:left;">
+part_of_ngram
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+animal welfare
+</td>
+<td style="text-align:left;">
+Animal welfare
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+biodiversity
+</td>
+<td style="text-align:left;">
+Biodiversity
+</td>
+<td style="text-align:left;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+biodiversity conservation programs
+</td>
+<td style="text-align:left;">
+Biodiversity conservation programs
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+carbon footprint
+</td>
+<td style="text-align:left;">
+Carbon footprint
+</td>
+<td style="text-align:left;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+carbon footprint reduction strategies
+</td>
+<td style="text-align:left;">
+Carbon footprint reduction strategies
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+carbon neutrality and offsets
+</td>
+<td style="text-align:left;">
+Carbon neutrality and offsets
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+</tbody>
+</table>
 
 ### Preparing the Document
 
@@ -167,18 +337,154 @@ document <- prep_document(
   .fun_std = std_str,
   .until = "tok"
 )
-
-head(document)
-#> # A tibble: 6 x 6
-#>   doc_id   pag_id par_id sen_id tok_id token     
-#>   <chr>     <int>  <int>  <int>  <int> <chr>     
-#> 1 BASF ESG      1      1      1      1 basf      
-#> 2 BASF ESG      1      1      1      2 report    
-#> 3 BASF ESG      1      1      1      3 2021      
-#> 4 BASF ESG      1      1      1      4 management
-#> 5 BASF ESG      1      1      1      5 s         
-#> 6 BASF ESG      1      1      1      6 report
 ```
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+doc_id
+</th>
+<th style="text-align:right;">
+pag_id
+</th>
+<th style="text-align:right;">
+par_id
+</th>
+<th style="text-align:right;">
+sen_id
+</th>
+<th style="text-align:right;">
+tok_id
+</th>
+<th style="text-align:left;">
+token
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+basf
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+report
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+2021
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+management
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+s
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+report
+</td>
+</tr>
+</tbody>
+</table>
 
 ### Counting Terms
 
@@ -215,18 +521,175 @@ output_pos <- position_count(
   .doc = document,
   sen_id
 )
-
-head(output_pos)
-#> # A tibble: 6 x 7
-#>   doc_id     tid ngram term                               start  stop dup  
-#>   <chr>    <dbl> <int> <chr>                              <int> <dbl> <lgl>
-#> 1 BASF ESG   127     1 sustainability                         7     7 FALSE
-#> 2 BASF ESG   127     1 sustainability                        13    13 FALSE
-#> 3 BASF ESG   127     1 sustainability                        40    40 FALSE
-#> 4 BASF ESG   136     4 sustainable development goals sdgs   106   109 FALSE
-#> 5 BASF ESG    89     2 renewable energy                     169   170 FALSE
-#> 6 BASF ESG    73     2 human rights                         248   249 FALSE
 ```
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+doc_id
+</th>
+<th style="text-align:right;">
+tid
+</th>
+<th style="text-align:right;">
+ngram
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+start
+</th>
+<th style="text-align:right;">
+stop
+</th>
+<th style="text-align:left;">
+dup
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+136
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+sustainable development goals sdgs
+</td>
+<td style="text-align:right;">
+106
+</td>
+<td style="text-align:right;">
+109
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+climate
+</td>
+<td style="text-align:right;">
+145
+</td>
+<td style="text-align:right;">
+145
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+89
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+renewable energy
+</td>
+<td style="text-align:right;">
+169
+</td>
+<td style="text-align:right;">
+170
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+</tbody>
+</table>
 
 The output of **`position_count()`** is a data frame with one row for
 each occurrence of each term in the document. The output contains the
@@ -258,23 +721,811 @@ function takes the followng inputs:
 
 ``` r
 output_sum <- summarize_count(output_pos)
-head(output_sum)
-#> # A tibble: 6 x 6
-#>   doc_id     tid ngram term                  n_dup n_uni
-#>   <chr>    <dbl> <int> <chr>                 <int> <int>
-#> 1 BASF ESG     2     1 biodiversity             53    53
-#> 2 BASF ESG     4     2 carbon footprint         19    19
-#> 3 BASF ESG     9     2 circular economy         18    18
-#> 4 BASF ESG    15     2 climate change            9     9
-#> 5 BASF ESG    21     2 community development     1     1
-#> 6 BASF ESG    25     2 conflict minerals         3     3
 ```
 
-The output of summarize_count**`()`** is a data frame that summarizes
-the count of the terms on a document level either **excluding** terms
-that are part of a higher N-gram (column: n_uni) or **including** terms
-that are part of a higher N-gram (column: n_dup). The output contains
-the following columns:
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+doc_id
+</th>
+<th style="text-align:right;">
+tid
+</th>
+<th style="text-align:right;">
+ngram
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+n_dup
+</th>
+<th style="text-align:right;">
+n_uni
+</th>
+<th style="text-align:left;">
+part_of_ngram
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:right;">
+87
+</td>
+<td style="text-align:right;">
+87
+</td>
+<td style="text-align:left;">
+125, 128
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+carbon
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+45
+</td>
+<td style="text-align:left;">
+4, 5, 6, 7, 8, 82, 83, 84
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+climate
+</td>
+<td style="text-align:right;">
+57
+</td>
+<td style="text-align:right;">
+48
+</td>
+<td style="text-align:left;">
+14, 15, 16, 17, 18, 19, 20, 62
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+biodiversity
+</td>
+<td style="text-align:right;">
+53
+</td>
+<td style="text-align:right;">
+53
+</td>
+<td style="text-align:left;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+73
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+human rights
+</td>
+<td style="text-align:right;">
+46
+</td>
+<td style="text-align:right;">
+43
+</td>
+<td style="text-align:left;">
+74
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+greenhouse gas
+</td>
+<td style="text-align:right;">
+45
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:left;">
+69, 70
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+69
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+greenhouse gas emissions
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+70
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+carbon footprint
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:left;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+46
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+environmental protection
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+circular economy
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:left;">
+10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+171
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+water management
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+166
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+transparency
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:left;">
+126
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+89
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+renewable energy
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:left;">
+24, 90, 91, 92
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+climate change
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:left;">
+16, 17, 62
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+energy efficiency
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+35
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+93
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+resource efficiency
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+94
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+124
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+supply chain management
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+68
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+conflict minerals
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+74
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+human rights due diligence
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+115
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+social responsibility
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+28, 29
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+136
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+sustainable development goals sdgs
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+water stewardship
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+eco efficiency
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+80
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+labor standards
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+95
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+resource scarcity
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+123
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+stakeholder engagement
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+150
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+sustainable procurement
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+152
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+sustainable production
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+167
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+waste management
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+163
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+community development
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+112
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+social inclusion
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+130
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+sustainable agriculture
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+131
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+139
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+sustainable finance
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+140
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+172
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+water scarcity
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+</tbody>
+</table>
+
+The output of `summarize_count()` is a data frame that summarizes the
+count of the terms on a document level either **excluding** terms that
+are part of a higher N-gram (column: `n_uni`) or **including** terms
+that are part of a higher N-gram (column: `n_dup`). The output contains
+the following columns (the column `part_of_ngram` is added to the output
+in order to show case the deduplicated count):
 
 - **`doc_id`**: The document ID.
 
@@ -290,11 +1541,30 @@ the following columns:
 - **`n_dup`**: Count of the term, including N-grams that are part of a
   higher N-gram
 
+Looking at the example above, we can see that the term **carbon (tid:
+174)** is part of several other terms within the termlist (see column:
+`part_of_ngram` which shows the term identifiers (tid) that are higher
+ngrams including this term). Specifically, carbon is part of the term
+**carbon footprint (tid: 5).** Both terms appear in the text corpus, so
+when we count both terms individually we get “raw” count (column:
+`n_dup`) of **64** for **carbon** and **19** for **carbon footprint.**
+Not adjusting for the fact that the term **carbon** is completely
+included in the term **carbon footprint**, would lead to a double
+counting of **carbon.** Therefore the column `n_uni` adjust the “raw”
+count to a “unique” count, by subtracting the occurrences of **carbon
+footprint** from the occurrences of **carbon.** This leads to a unique
+count of **carbon** of **45 (64 - 19).**
+
+(Note: In the example above only **carbon footprint** as a higher ngram
+was found in the corpus. In case more higher ngram were contained in the
+corpus, the function would have automatically adjust for all
+occurrences)
+
 # Why this Package?
 
-Counting terms in documents is perse an easy task. Nonetheless, using
-simple look-ups or Regular Expressions have their drawbacks. For example
-using regular expressions can take a very long time and we don’t
+Counting terms in documents is generally not a hard task. Nonetheless,
+using simple look-ups or Regular Expressions have their drawbacks. For
+example using regular expressions can take a very long time and we don’t
 retrieve the exact location of a term. So the purpose of this package is
 to:
 
@@ -317,15 +1587,88 @@ context <- get_context(
   .n = 4
 ) %>%
   dplyr::select(pre, term, post)
-
-head(context)
-#> # A tibble: 6 x 3
-#>   pre                          term                               post          
-#>   <chr>                        <chr>                              <chr>         
-#> 1 2021 management s report     sustainability                     along the val~
-#> 2 the value chain 96 ---       sustainability                     along the val~
-#> 3 the three pillars of         sustainability                     are firmly an~
-#> 4 them with respect nations    sustainable development goals sdgs in many ways ~
-#> 5 increase the capabilities of renewable energy                   alongside the~
-#> 6 a potential risk of          human rights                       violations --~
 ```
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+pre
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:left;">
+post
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+2021 management s report
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:left;">
+along the value chain
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+the value chain 96 —
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:left;">
+along the value chain
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+the three pillars of
+</td>
+<td style="text-align:left;">
+sustainability
+</td>
+<td style="text-align:left;">
+are firmly anchored in
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+them with respect nations
+</td>
+<td style="text-align:left;">
+sustainable development goals sdgs
+</td>
+<td style="text-align:left;">
+in many ways see
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+demand for food enable
+</td>
+<td style="text-align:left;">
+climate
+</td>
+<td style="text-align:left;">
+smart mobility reduce emissions
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+increase the capabilities of
+</td>
+<td style="text-align:left;">
+renewable energy
+</td>
+<td style="text-align:left;">
+alongside these positive contributions
+</td>
+</tr>
+</tbody>
+</table>

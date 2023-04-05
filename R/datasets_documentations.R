@@ -20,6 +20,7 @@
 #' \describe{
 #'   \item{tid}{A term identifier}
 #'   \item{term}{A Term}
+#'   \item{part_of_ngram }{Indicator Column if a term is part of a higher ngram}
 #'   \item{origin}{Term origin}
 #' }
 "table_terms"
