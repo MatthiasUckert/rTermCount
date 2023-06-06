@@ -312,6 +312,7 @@ summarize_count <- function(.tab) {
     tibble::as_tibble()
 }
 
+
 #' Get Context of Terms in a Document
 #'
 #' @param .pos A dataframe with terms and their positions in the input .doc dataframe.
@@ -329,7 +330,7 @@ summarize_count <- function(.tab) {
 get_context <- function(.pos, .doc, .context = c("word", "sentence"), .n, .sep = "---") {
 
   doc_id <- tid <- ngram <- dup <- start <- pre <- term <- post <-  sen_id <- tmp <-
-    token <- tok_id <- NULL
+    token <- tok_id <- pag_id <- par_id <- NULL
 
   # Check if the input .context is valid and set the context_ variable accordingly
   context_ <- match.arg(.context, c("word", "sentence"))
@@ -445,7 +446,14 @@ get_context <- function(.pos, .doc, .context = c("word", "sentence"), .n, .sep =
       post = utils::relist(doc_$token[unlist(lst_post)], lst_post),
       pre = purrr::map_chr(pre, ~ paste(.x, collapse = " ")),
       post = purrr::map_chr(post, ~ paste(.x, collapse = " "))
-    )
+    ) %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::left_join(
+      y = doc_[, c("tok_id", "pag_id", "par_id", "sen_id")],
+      by = c("start" = "tok_id")
+      ) %>%
+    tibble::as_tibble() %>%
+    dplyr::relocate(pag_id, par_id, sen_id, .after = doc_id)
 
   return(out_)
 }
