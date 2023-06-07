@@ -1585,13 +1585,30 @@ context <- get_context(
   .doc = document, 
   .context = "word",
   .n = 4
-) %>%
-  dplyr::select(pre, term, post)
+) 
 ```
 
 <table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; font-size: 10px; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
+<th style="text-align:left;">
+doc_id
+</th>
+<th style="text-align:right;">
+tid
+</th>
+<th style="text-align:right;">
+ngram
+</th>
+<th style="text-align:left;">
+dup
+</th>
+<th style="text-align:right;">
+start
+</th>
+<th style="text-align:right;">
+stop
+</th>
 <th style="text-align:left;">
 pre
 </th>
@@ -1601,10 +1618,34 @@ term
 <th style="text-align:left;">
 post
 </th>
+<th style="text-align:left;">
+context
+</th>
+<th style="text-align:right;">
+n
+</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+7
+</td>
 <td style="text-align:left;">
 2021 management s report
 </td>
@@ -1614,8 +1655,32 @@ sustainability
 <td style="text-align:left;">
 along the value chain
 </td>
+<td style="text-align:left;">
+word
+</td>
+<td style="text-align:right;">
+4
+</td>
 </tr>
 <tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+13
+</td>
 <td style="text-align:left;">
 the value chain 96 —
 </td>
@@ -1625,8 +1690,32 @@ sustainability
 <td style="text-align:left;">
 along the value chain
 </td>
+<td style="text-align:left;">
+word
+</td>
+<td style="text-align:right;">
+4
+</td>
 </tr>
 <tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+40
+</td>
 <td style="text-align:left;">
 the three pillars of
 </td>
@@ -1636,8 +1725,32 @@ sustainability
 <td style="text-align:left;">
 are firmly anchored in
 </td>
+<td style="text-align:left;">
+word
+</td>
+<td style="text-align:right;">
+4
+</td>
 </tr>
 <tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+136
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+106
+</td>
+<td style="text-align:right;">
+109
+</td>
 <td style="text-align:left;">
 them with respect nations
 </td>
@@ -1647,8 +1760,32 @@ sustainable development goals sdgs
 <td style="text-align:left;">
 in many ways see
 </td>
+<td style="text-align:left;">
+word
+</td>
+<td style="text-align:right;">
+4
+</td>
 </tr>
 <tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+145
+</td>
+<td style="text-align:right;">
+145
+</td>
 <td style="text-align:left;">
 demand for food enable
 </td>
@@ -1658,8 +1795,32 @@ climate
 <td style="text-align:left;">
 smart mobility reduce emissions
 </td>
+<td style="text-align:left;">
+word
+</td>
+<td style="text-align:right;">
+4
+</td>
 </tr>
 <tr>
+<td style="text-align:left;">
+BASF ESG
+</td>
+<td style="text-align:right;">
+89
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+169
+</td>
+<td style="text-align:right;">
+170
+</td>
 <td style="text-align:left;">
 increase the capabilities of
 </td>
@@ -1668,6 +1829,12 @@ renewable energy
 </td>
 <td style="text-align:left;">
 alongside these positive contributions
+</td>
+<td style="text-align:left;">
+word
+</td>
+<td style="text-align:right;">
+4
 </td>
 </tr>
 </tbody>

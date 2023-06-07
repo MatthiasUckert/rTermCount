@@ -328,8 +328,7 @@ context <- get_context(
   .doc = document, 
   .context = "word",
   .n = 4
-) %>%
-  dplyr::select(pre, term, post)
+) 
 ```
 
 ```{r echo=FALSE}

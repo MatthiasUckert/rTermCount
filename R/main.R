@@ -323,10 +323,6 @@ summarize_count <- function(.tab) {
 #'
 #' @return A dataframe with pre and post context information for each term.
 #' @export
-#'
-#' @examples
-#'
-# TODO: Add examples
 get_context <- function(.pos, .doc, .context = c("word", "sentence"), .n, .sep = "---") {
 
   doc_id <- tid <- ngram <- dup <- start <- pre <- term <- post <-  sen_id <- tmp <-
