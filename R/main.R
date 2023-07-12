@@ -433,7 +433,9 @@ get_context <- function(.pos, .doc, .context = c("word", "sentence"), .n, .sep =
 
   # Create lists of pre and post context ranges
   lst_pre <- purrr::map2(pre0, pre1, ~ .x:.y)
+  lst_pre <- purrr::map(lst_pre, ~ .x[.x > 0 & .x <= max(.doc$tok_id)])
   lst_post <- purrr::map2(post0, post1, ~ .x:.y)
+  lst_post <- purrr::map(lst_post, ~ .x[.x > 0 & .x <= max(.doc$tok_id)])
 
   # Update tab_ with pre and post context information
   out_ <- tab_ %>%
