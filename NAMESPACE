@@ -2,6 +2,7 @@
 
 export("%>%")
 export(get_context)
+export(get_context_word)
 export(get_dups)
 export(position_count)
 export(prep_document)

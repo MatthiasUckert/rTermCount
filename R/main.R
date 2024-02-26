@@ -150,9 +150,14 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
       output = text,
       input = text,
       token = stringi::stri_split_regex, pattern = "\f",
-      to_lower = FALSE, drop = FALSE
+      to_lower = FALSE,
+      drop = FALSE
     ) %>%
-    dplyr::mutate(pag_id = dplyr::row_number())
+    dtplyr::lazy_dt() %>%
+    dplyr::group_by(doc_id) %>%
+    dplyr::mutate(pag_id = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    tibble::as_tibble()
 
   if (until_ == "pag") {
     if (!is.null(.fun_std)) {
@@ -169,9 +174,14 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
       output = text,
       input = text,
       token = stringi::stri_split_regex, pattern = "\n{2,}",
-      to_lower = FALSE, drop = FALSE
+      to_lower = FALSE,
+      drop = FALSE
     ) %>%
-    dplyr::mutate(par_id = dplyr::row_number())
+    dtplyr::lazy_dt() %>%
+    dplyr::group_by(doc_id) %>%
+    dplyr::mutate(par_id = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    tibble::as_tibble()
 
   if (until_ == "par") {
     if (!is.null(.fun_std)) {
@@ -184,13 +194,19 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
 
   # To Sentence -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
   tab_ <- tab_ %>%
+    dplyr::group_by(doc_id, pag_id, par_id) %>%
     tidytext::unnest_tokens(
       output = text,
       input = text,
       token = "sentences",
-      to_lower = FALSE
+      to_lower = FALSE,
+      drop = FALSE
     ) %>%
-    dplyr::mutate(sen_id = dplyr::row_number())
+    dtplyr::lazy_dt() %>%
+    dplyr::group_by(doc_id) %>%
+    dplyr::mutate(sen_id = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    tibble::as_tibble()
 
   if (until_ == "sen") {
     if (!is.null(.fun_std)) {
@@ -213,9 +229,12 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
       pattern = " ",
       to_lower = FALSE
     ) %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::group_by(doc_id) %>%
     dplyr::filter(!token == "") %>%
     dplyr::mutate(tok_id = dplyr::row_number()) %>%
     dplyr::select(doc_id, pag_id, par_id, sen_id, tok_id, token) %>%
+    dplyr::ungroup() %>%
     tibble::as_tibble()
 
   return(tab_)
@@ -266,22 +285,29 @@ position_count <- function(.tls, .doc, ...) {
 
   # Prepare Document -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
   doc_ <- .doc %>%
-    dplyr::group_by(!!!quos_) %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::group_by(doc_id, !!!quos_) %>%
     dplyr::mutate(n = dplyr::n()) %>%
     dplyr::mutate(sep = paste(!!!quos_, sep = "-")) %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    tibble::as_tibble()
 
 
   # Calculate Ngram -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
   ngrams_ <- sort(unique(.tls$ngram))
-  purrr::map_dfr(ngrams_, ~ get_ngram(doc_, .tls, .x)) %>%
-    dplyr::arrange(start, -ngram) %>%
+  out_ <- purrr::map(ngrams_, ~ get_ngram(doc_, .tls, .x)) %>%
+    dplyr::bind_rows() %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::arrange(doc_id, start, -ngram) %>%
+    tibble::as_tibble() %>%
     dplyr::mutate(
       ids = purrr::map2(start, stop, ~ .x:.y),
       dup = utils::relist(flesh = duplicated(unlist(ids)), skeleton = ids),
       dup = purrr::map_lgl(dup, all)
     ) %>%
     dplyr::select(-ids)
+
+  return(out_)
 }
 
 
@@ -455,3 +481,67 @@ get_context <- function(.pos, .doc, .context = c("word", "sentence"), .n, .sep =
 
   return(out_)
 }
+
+
+#' Get Context of Terms in a Document
+#'
+#' @param .pos A dataframe with terms and their positions in the input .doc dataframe.
+#' @param .doc A tokenized dataframe of an input text.
+#' @param .n A positive integer specifying the number of words or sentences to include in the context.
+#'
+#' @return A dataframe with pre and post context information for each term.
+#' @export
+get_context_word <- function(.pos, .doc, .n) {
+  doc_id <- tid <- ngram <- dup <- start <- pre <- term <- post <-  sen_id <- tmp <-
+    token <- tok_id <- pag_id <- par_id <- n <- group_id <- type <- new_sen <-
+    new_par <- context <- NULL
+
+  pos_ <- .pos %>%
+    dplyr::mutate(n = .n) %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::group_by(doc_id) %>%
+    dplyr::mutate(group_id = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      pre = purrr::map2(start, n, ~ (.x - 1L):(.x - .y)),
+      post = purrr::map2(stop, n, ~ (.x + 1L):(.x + .y))
+    ) %>%
+    dplyr::select(doc_id, group_id, tid, term, pre, post) %>%
+    tibble::as_tibble() %>%
+    tidyr::unnest(c(pre, post)) %>%
+    tidyr::pivot_longer(c(pre, post), names_to = "type", values_to = "tok_id")  %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::arrange(doc_id, group_id, type, tok_id) %>%
+    tibble::as_tibble()
+
+
+
+  out_ <- .doc %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::inner_join(pos_, by = c("doc_id", "tok_id")) %>%
+    dplyr::group_by(doc_id, group_id, term, type) %>%
+    dplyr::mutate(
+      new_sen = dplyr::lag(sen_id) != sen_id,
+      new_par = dplyr::lag(par_id) != par_id,
+      dplyr::across(c(new_sen, new_par), ~ dplyr::if_else(is.na(.), FALSE, .))
+      ) %>%
+    dplyr::mutate(token = dplyr::case_when(
+      new_sen & new_par ~ paste0("[ps] ", token),
+      new_sen & !new_par ~ paste0("[s] ", token),
+      !new_sen & new_par ~ paste0("[p] ", token),
+      TRUE ~ token
+    )) %>%
+    dplyr::arrange(tok_id, .by_group = TRUE) %>%
+    dplyr::summarise(
+      context = paste(token, collapse = " "),
+      .groups = "drop"
+    ) %>%
+    tibble::as_tibble() %>%
+    tidyr::pivot_wider(names_from = type, values_from = context) %>%
+    dplyr::select(doc_id, pre, term, post) %>%
+    dplyr::mutate(context = "word", n = .n)
+
+  return(out_)
+}
+
+
