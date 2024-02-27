@@ -194,7 +194,6 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
 
   # To Sentence -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
   tab_ <- tab_ %>%
-    dplyr::group_by(doc_id, pag_id, par_id) %>%
     tidytext::unnest_tokens(
       output = text,
       input = text,
