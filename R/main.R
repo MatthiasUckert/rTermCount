@@ -142,7 +142,6 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
   check_cols(.tab, "text", .type = ".doc")
   check_dups(.tab, "term", .when = "none")
 
-
   # Tokenize Dataframe -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
   # To Page -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ---
   tab_ <- .tab %>%
@@ -224,8 +223,7 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
     tidytext::unnest_tokens(
       output = token,
       input = text,
-      token = stringi::stri_split_fixed,
-      pattern = " ",
+      token = stringi::stri_split_fixed, pattern = " ",
       to_lower = FALSE
     ) %>%
     dtplyr::lazy_dt() %>%
@@ -235,7 +233,6 @@ prep_document <- function(.tab, .fun_std = NULL, .until = c("tok", "sen", "par",
     dplyr::select(doc_id, pag_id, par_id, sen_id, tok_id, token) %>%
     dplyr::ungroup() %>%
     tibble::as_tibble()
-
   return(tab_)
 }
 
